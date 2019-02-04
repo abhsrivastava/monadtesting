@@ -1,0 +1,5 @@
+target
+project/target
+.metals
+.DS_Store
+.bloop
