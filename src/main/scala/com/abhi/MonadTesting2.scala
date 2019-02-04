@@ -16,7 +16,8 @@ trait Random[F[_]] {
 }
 
 class GameLoopImpl {
-    def gameLoop[F[_]](number: Int)(implicit C: Console[F], F: Monad[F]) : F[Unit] = {
+    def gameLoop[F[_]: Console: Monad](number: Int) : F[Unit] = {
+        val C = implicitly[Console[F]]
         C.readInput().flatMap{input => 
             if (number == input) C.print("you won!").map(_ => ())
             else if (input > number) {
