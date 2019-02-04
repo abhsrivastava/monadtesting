@@ -12,7 +12,7 @@ trait Console[F[_]] {
 }
 
 trait Random[F[_]] {
-    def getRandomInt: F[Int]
+    def getRandomInt() : F[Int]
 }
 
 class GameLoopImpl {
@@ -29,8 +29,19 @@ class GameLoopImpl {
     }
 }
 
+class GameImpl {
+    val game = new GameLoopImpl()
+    def play[F[_]: Random: Console: Monad]() : F[Unit] = {
+        val random = implicitly[Random[F]]
+        for {
+            number <- random.getRandomInt()
+            _ <- game.gameLoop(number)
+        } yield()
+    }
+}
+
 class ConsoleImpl extends Console[IO] {
-    private def readInt() : IO[Int] = {
+    def readInt() : IO[Int] = {
         Try(readLine().toInt).toOption match {
             case Some(x) if x <= 100 => IO.pure(x)
             case _ => print("Wrong Number").flatMap{ _ => readInput()}
@@ -48,12 +59,9 @@ class RandomImpl extends Random[IO] {
 
 object MonadTesting2 extends IOApp {
     def run(params: List[String]) : IO[ExitCode] = {
-        val random = new RandomImpl()
         implicit val console = new ConsoleImpl()
-        val game = new GameLoopImpl()
-        for {
-            number <- random.getRandomInt()
-            _ <- game.gameLoop[IO](number)
-        } yield (ExitCode.Success)    
+        implicit val random = new RandomImpl()
+        val game = new GameImpl()
+        game.play().map(_ => ExitCode.Success)
     }
 }
