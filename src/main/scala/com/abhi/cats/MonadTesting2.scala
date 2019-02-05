@@ -1,4 +1,4 @@
-package com.abhi
+package com.abhi.cats
 
 import cats.Monad
 import cats.effect.{IO, IOApp, ExitCode}

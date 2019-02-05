@@ -1,4 +1,5 @@
-package com.abhi
+package com.abhi.cats
+
 import org.scalatest._
 import cats.Id
 import cats.effect.IO
