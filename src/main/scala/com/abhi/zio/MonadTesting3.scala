@@ -3,6 +3,8 @@ package com.abhi.zio
 import scalaz.zio.{App, IO}
 import scalaz.zio.interop.catz._
 import cats.Monad
+import cats.syntax.flatMap._
+import cats.implicits._
 import scala.util.Try
 
 object MonadTesting3 extends App {
@@ -35,8 +37,10 @@ object MonadTesting3 extends App {
     }
 
     class GameImpl {
-        def gameLoop[E <: Error, F[+_, +_]](number: Int)(implicit M : Monad[F[E, ?]], C: Console[F]) : F[E, Unit] = {
-            C.readInput().flatMap{input => 
+        def gameLoop[E <: Error, F[+_, +_]](number: Int)(implicit C: Console[F], M : Monad[F[E, ?]]) : F[E, Unit] = {
+            for {
+                input <- C.readInput()
+            } yield {
                 if (number == input) C.print("you won").map(_ => ())
                 else if (number > input) C.print("you guessed too high").flatMap(_ => gameLoop(number))
                 else C.print("you guessed too low").flatMap(_ => gameLoop(number))
