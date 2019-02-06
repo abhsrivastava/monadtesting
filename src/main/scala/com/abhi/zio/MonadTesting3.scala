@@ -34,10 +34,13 @@ object MonadTesting3 extends App {
         }
     }
 
-    class GameImpl[E <: Error, F[E, ?] :Random : Monad] {
-
-        def gameLoop() : F[E, Unit] = {
-            ???
+    class GameImpl {
+        def gameLoop[E <: Error, F[+_, +_]](number: Int)(implicit M : Monad[F[E, ?]], C: Console[F]) : F[E, Unit] = {
+            C.readInput().flatMap{input => 
+                if (number == input) C.print("you won").map(_ => ())
+                else if (number > input) C.print("you guessed too high").flatMap(_ => gameLoop(number))
+                else C.print("you guessed too low").flatMap(_ => gameLoop(number))
+            }
         }
     }
 
