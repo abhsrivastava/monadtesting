@@ -5,6 +5,7 @@ import scalaz.zio.interop.catz._
 import cats.Monad
 import cats.syntax.flatMap._
 import cats.implicits._
+import cats.syntax.all._
 import scala.util.Try
 
 object MonadTesting3 extends App {
