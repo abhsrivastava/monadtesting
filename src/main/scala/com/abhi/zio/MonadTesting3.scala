@@ -50,7 +50,6 @@ object MonadTesting3 extends App {
         def play()(implicit C: Console[E, F], R: Random[E, F], M: Monad[F[E, ?]]) : F[E, Unit] = {
             for {
                 number <- R.getRandomInt()
-                _ <- C.print(s"I guessed $number")
                 retVal <- game.gameLoop(number)
             } yield retVal
         }
