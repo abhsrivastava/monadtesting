@@ -2,7 +2,7 @@ package com.abhi.zio
 
 import scalaz.zio.{App, IO}
 import scalaz.zio.interop.catz._
-import cats.{Monad, FlatMap}
+import cats.FlatMap
 import cats.implicits._
 import scala.util.Try
 
@@ -18,7 +18,7 @@ object MonadTesting3 extends App {
 
     class ConsoleImpl extends Console[ErrorMsg, IO] {
         def readInput() : IO[ErrorMsg, Int] = {
-            print("Please enter a number") *> IO.fromTry(Try(scala.io.StdIn.readLine().toInt)).leftMap(e => ErrorMsg(List(e.getMessage)))
+            print("Please enter a number") *> IO.fromTry(Try(scala.io.StdIn.readLine().toInt)).leftMap(e => ErrorMsg(List(e.toString)))
         }
         def print(msg: String) : IO[ErrorMsg, Unit] = {
             IO.sync {println(msg)}
@@ -36,9 +36,9 @@ object MonadTesting3 extends App {
     }
 
     class GameLoopImpl[E <: Error, F[+_, +_]] {
-        def gameLoop(number: Int)(implicit C: Console[E, F], M: Monad[F[E, ?]]) : F[E, Unit] = {
+        def gameLoop(number: Int)(implicit C: Console[E, F], M: FlatMap[F[E, ?]]) : F[E, Unit] = {
             C.readInput().flatMap { input => 
-                if (number == input) C.print("you won")
+                if (number == input) C.print("you won!")
                 else if (input > number) C.print("you guessed too high").flatMap(_ => gameLoop(number))
                 else C.print("you guessed too low").flatMap(_ => gameLoop(number))
             }
@@ -47,7 +47,7 @@ object MonadTesting3 extends App {
 
     class GameImpl[E <: Error, F[+_, +_]] {
         val game = new GameLoopImpl[E, F]()
-        def play()(implicit C: Console[E, F], R: Random[E, F], M: Monad[F[E, ?]]) : F[E, Unit] = {
+        def play()(implicit C: Console[E, F], R: Random[E, F], M: FlatMap[F[E, ?]]) : F[E, Unit] = {
             for {
                 number <- R.getRandomInt()
                 retVal <- game.gameLoop(number)
@@ -60,7 +60,7 @@ object MonadTesting3 extends App {
         implicit val random = new RandomImpl()
         val game = new GameImpl[ErrorMsg, IO]()
         game.play().redeemPure(
-            _ => ExitStatus.ExitNow(1), 
+            e => {e.msg.foreach(println); ExitStatus.ExitNow(1)}, 
             _ => ExitStatus.ExitNow(0)
         )
     }

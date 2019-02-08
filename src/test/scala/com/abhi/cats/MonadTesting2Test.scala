@@ -32,7 +32,7 @@ class TestSpec extends FlatSpec with Matchers {
         console.results(0) should equal ("you won!")
         console.results(1) should equal ("you guessed too low")
         console.results(2) should equal ("you guessed too low")
-        console.results(3) should equal ("you guessed to high")
-        console.results(4) should equal ("you guessed to high")    
+        console.results(3) should equal ("you guessed too high")
+        console.results(4) should equal ("you guessed too high")    
     }
 }

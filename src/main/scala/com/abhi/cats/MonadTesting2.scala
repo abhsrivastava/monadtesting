@@ -1,6 +1,6 @@
 package com.abhi.cats
 
-import cats.Monad
+import cats.FlatMap
 import cats.effect.{IO, IOApp, ExitCode}
 import cats.implicits._
 import scala.util.Try
@@ -16,12 +16,12 @@ trait Random[F[_]] {
 }
 
 class GameLoopImpl {
-    def gameLoop[F[_]: Console: Monad](number: Int) : F[Unit] = {
+    def gameLoop[F[_]: Console: FlatMap](number: Int) : F[Unit] = {
         val C = implicitly[Console[F]]
         C.readInput().flatMap{input => 
             if (number == input) C.print("you won!").map(_ => ())
             else if (input > number) {
-                C.print("you guessed to high").flatMap(_ => gameLoop(number))
+                C.print("you guessed too high").flatMap(_ => gameLoop(number))
             } else {
                 C.print("you guessed too low").flatMap(_ => gameLoop(number))
             }
@@ -31,7 +31,7 @@ class GameLoopImpl {
 
 class GameImpl {
     val game = new GameLoopImpl()
-    def play[F[_]: Random: Console: Monad]() : F[Unit] = {
+    def play[F[_]: Random: Console: FlatMap]() : F[Unit] = {
         val random = implicitly[Random[F]]
         for {
             number <- random.getRandomInt()
