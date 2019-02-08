@@ -13,5 +13,8 @@ lazy val root = (project in file("."))
       "org.scalaz" %% "scalaz-zio" % "0.6.0",
       "org.scalaz" %% "scalaz-zio-interop" % "0.5.0",
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    ),
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
     )
   )

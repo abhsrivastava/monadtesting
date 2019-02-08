@@ -2,10 +2,8 @@ package com.abhi.zio
 
 import scalaz.zio.{App, IO}
 import scalaz.zio.interop.catz._
-import cats.Monad
-import cats.syntax.flatMap._
+import cats.{Monad, FlatMap}
 import cats.implicits._
-import cats.syntax.all._
 import scala.util.Try
 
 object MonadTesting3 extends App {
@@ -13,43 +11,58 @@ object MonadTesting3 extends App {
     trait Error
     case class ErrorMsg(msg: List[String]) extends Error
 
-    trait Console[F[_ <: Error, _]] {
-        def readInput() : F[Error, Int]
-        def print(msg: String) : F[Error, Unit]
+    trait Console[E <: Error, F[E, _]] {
+        def readInput() : F[E, Int]
+        def print(msg: String) : F[E, Unit]
     }
 
-    class ConsoleImpl extends Console[IO] {
+    class ConsoleImpl extends Console[ErrorMsg, IO] {
         def readInput() : IO[ErrorMsg, Int] = {
-            IO.fromTry(Try(scala.io.StdIn.readLine().toInt)).leftMap(e => ErrorMsg(List(e.getMessage)))
+            print("Please enter a number") *> IO.fromTry(Try(scala.io.StdIn.readLine().toInt)).leftMap(e => ErrorMsg(List(e.getMessage)))
         }
         def print(msg: String) : IO[ErrorMsg, Unit] = {
             IO.sync {println(msg)}
         }
     }
 
-    trait Random[F[_ <: Error, _]] {
-        def getRandomInt() : F[Error, Int]
+    trait Random[E <: Error, F[E, _]] {
+        def getRandomInt() : F[E, Int]
     }
 
-    class RandomImpl extends Random[IO] {
-        def getRandomInt() : IO[Nothing, Int] = {
+    class RandomImpl extends Random[ErrorMsg, IO] {
+        def getRandomInt() : IO[ErrorMsg, Int] = {
             IO.point(scala.util.Random.nextInt(100))
         }
     }
 
-    class GameImpl {
-        def gameLoop[E <: Error, F[+_, +_]](number: Int)(implicit C: Console[F], M : Monad[F[E, ?]]) : F[E, Unit] = {
-            for {
-                input <- C.readInput()
-            } yield {
-                if (number == input) C.print("you won").map(_ => ())
-                else if (number > input) C.print("you guessed too high").flatMap(_ => gameLoop(number))
+    class GameLoopImpl[E <: Error, F[+_, +_]] {
+        def gameLoop(number: Int)(implicit C: Console[E, F], M: Monad[F[E, ?]]) : F[E, Unit] = {
+            C.readInput().flatMap { input => 
+                if (number == input) C.print("you won")
+                else if (input > number) C.print("you guessed too high").flatMap(_ => gameLoop(number))
                 else C.print("you guessed too low").flatMap(_ => gameLoop(number))
             }
         }
     }
 
+    class GameImpl[E <: Error, F[+_, +_]] {
+        val game = new GameLoopImpl[E, F]()
+        def play()(implicit C: Console[E, F], R: Random[E, F], M: Monad[F[E, ?]]) : F[E, Unit] = {
+            for {
+                number <- R.getRandomInt()
+                _ <- C.print(s"I guessed $number")
+                retVal <- game.gameLoop(number)
+            } yield retVal
+        }
+    }
+
     def run(param: List[String]) : IO[Nothing, ExitStatus] = {
-        ???
+        implicit val console = new ConsoleImpl()
+        implicit val random = new RandomImpl()
+        val game = new GameImpl[ErrorMsg, IO]()
+        game.play().redeemPure(
+            _ => ExitStatus.ExitNow(1), 
+            _ => ExitStatus.ExitNow(0)
+        )
     }
 }
