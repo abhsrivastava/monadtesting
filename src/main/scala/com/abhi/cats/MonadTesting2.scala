@@ -16,10 +16,11 @@ trait Random[F[_]] {
 }
 
 class GameLoopImpl {
-    def gameLoop[F[_]: Console: FlatMap](number: Int) : F[Unit] = {
-        val C = implicitly[Console[F]]
-        C.readInput().flatMap{input => 
-            if (number == input) C.print("you won!").map(_ => ())
+    def gameLoop[F[_]](number: Int)(implicit C: Console[F], M: FlatMap[F]) : F[Unit] = {
+        for {
+            input <- C.readInput
+        } yield {
+            if (number == input) C.print("you won!")
             else if (input > number) {
                 C.print("you guessed too high").flatMap(_ => gameLoop(number))
             } else {
